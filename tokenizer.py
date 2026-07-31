@@ -36,7 +36,7 @@ class CastomQwenTokeniser():
                 else:
                     word[best_pos] = word[best_pos] + word[best_pos + 1]
                     word.pop(best_pos + 1)
-
+        print(unicode_ch)
 
     def decode(self, ids: list[int]) -> str:
         pass
@@ -65,7 +65,9 @@ class CastomQwenTokeniser():
                 ret[(token_0, token_01)] = rank
         return ret
 
-    def vocab_dict
+    def vocab_dict():
+        pass
+
 
 def main():
     LLM_MODEL = llm_sdk.Small_LLM_Model()

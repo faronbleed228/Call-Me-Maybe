@@ -1,9 +1,29 @@
 [project]
-name = "call-me-maybe"
+name = "llm-sdk"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.11"
+description = "LLM SDK for local model inference"
+requires-python = ">=3.10,<3.13"
 dependencies = [
-    "regex>=2026.7.19",
+    # Фиксируем NumPy 1.x для совместимости с PyTorch 2.2.2 на Intel Mac
+    "numpy<2",
+    # На Intel Mac оф. колеса PyPI есть только до PyTorch 2.2.2
+    "torch>=2.0.0,<=2.2.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    # Для всех остальных систем (Linux, Apple Silicon) берем стандартные свежие версии
+    "torch>=2.0.0; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "transformers>=4.40.0",
+    "huggingface-hub>=0.20.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["llm_sdk"]
+
+[tool.uv]
+required-environments = [
+    "sys_platform == 'linux'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
