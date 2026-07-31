@@ -1,5 +1,6 @@
 import regex
 import llm_sdk
+import json
 
 
 class CastomQwenTokeniser():
@@ -11,6 +12,9 @@ class CastomQwenTokeniser():
             "| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
         self._unicode_dict = self.bytes_to_unicode()
         self._merges_dict = self.merge_dict()
+        self._vocab_dict = self.json_to_dict()
+        self._decode_dict = self.decode_dict()
+        self._bytes_dict = self.unicode_to_bytes()
 
     def encode(self, text: str) -> list[int]:
         pre_token = regex.findall(self._pattern, text)
@@ -36,10 +40,19 @@ class CastomQwenTokeniser():
                 else:
                     word[best_pos] = word[best_pos] + word[best_pos + 1]
                     word.pop(best_pos + 1)
-        print(unicode_ch)
+        token_list = []
+        for token in unicode_ch:
+            for merge in token:
+                token_list.append(self._vocab_dict[merge])
+        return token_list
 
-    def decode(self, ids: list[int]) -> str:
-        pass
+    def decode(self, token_ids: list[int]) -> str:
+        unicode_ch = [self._decode_dict[token] for token in token_ids]
+        byte_list = [self._bytes_dict[byte]
+                     for word in unicode_ch for byte in word]
+        byte_list = bytes(byte_list)
+        text = byte_list.decode()
+        return text
 
     def bytes_to_unicode(self) -> dict[int, str]:
         bs = list(list(range(ord("!"), ord("~") + 1)) +
@@ -65,15 +78,35 @@ class CastomQwenTokeniser():
                 ret[(token_0, token_01)] = rank
         return ret
 
-    def vocab_dict():
-        pass
+    def json_to_dict(self) -> dict[str, int]:
+        with open(self._vocab_path) as vocab_file:
+            data = json.load(vocab_file)
+        return data
+
+    def decode_dict(self) -> dict[int, str]:
+        with open(self._vocab_path) as vocab_json:
+            data = json.load(vocab_json)
+            decode_dict = {key: id for id, key in data.items()}
+        return decode_dict
+
+    def unicode_to_bytes(self) -> dict[str, int]:
+        uni_to_b_dict = {u_char: byte for (
+            byte, u_char) in self._unicode_dict.items()}
+        return uni_to_b_dict
 
 
 def main():
     LLM_MODEL = llm_sdk.Small_LLM_Model()
     test_token = CastomQwenTokeniser(
         LLM_MODEL.get_path_to_vocab_file(), LLM_MODEL.get_path_to_merges_file())
-    test_token.encode("Hello World.")
+    tokens = test_token.encode('{"a": 40, "b": 2}')
+    origin_tokens = LLM_MODEL.encode('{"a": 40, "b": 2}')
+    print(tokens)
+    print(origin_tokens)
+    decoded_text = test_token.decode(tokens)
+    origin_text = LLM_MODEL.decode(origin_tokens)
+    print(decoded_text)
+    print(type(origin_text))
 
 
 def test():
