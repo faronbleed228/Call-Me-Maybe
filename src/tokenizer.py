@@ -18,10 +18,12 @@ class CastomQwenTokeniser():
 
     def encode(self, text: str) -> list[int]:
         pre_token = regex.findall(self._pattern, text)
+        print(pre_token)
         raw_bytes = [byte.encode() for byte in pre_token]
         unicode_ch = [[self._unicode_dict[char]
                       for char in key] for key in raw_bytes]
         i = 0
+        print(unicode_ch)
         for word in unicode_ch:
             while (True):
                 i = 0
@@ -95,7 +97,7 @@ class CastomQwenTokeniser():
         return uni_to_b_dict
 
 
-def main():
+def main() -> None:
     LLM_MODEL = llm_sdk.Small_LLM_Model()
     test_token = CastomQwenTokeniser(
         LLM_MODEL.get_path_to_vocab_file(), LLM_MODEL.get_path_to_merges_file())
@@ -109,7 +111,7 @@ def main():
     print(type(origin_text))
 
 
-def test():
+def test() -> None:
     rules = {("h", "e"): 0, ("he", "l"): 1, ("p", "0"): 2}
     word = ["h", "e", "l", "o", "p", "0"]
     while True:

@@ -1,5 +1,0 @@
-#skip line
-bb bb
-aa aa
-a aaaa
-gho gh
