@@ -98,6 +98,88 @@ class CustomQwenTokeniser():
 
 
 def main() -> None:
+    TEST_CASES: list[str] = [
+        # 1. Граничные случаи пустых строк и пробелов
+        "",
+        " ",
+        "   ",
+        "Hello world",
+        " hello world ",
+        "hello   world",
+        "\t",
+        "\n",
+        "\r\n",
+        "\n\n\t\r\n",
+
+        # 2. JSON-синтаксис, экранирование и спецсимволы (Function Calling)
+        '{"name": "get_weather", "arguments": {"city": "Paris"}}',
+        '{"name": "calculate", "arguments": {"a": 42, "b": 3.14}}',
+        '{"parameters": {}}',
+        "[]",
+        '["item_1", "item_2", 123]',
+        '{"key": "value with \\"quotes\\" and \\nnewlines"}',
+        "::==>>",
+        "---===***",
+        "<!-- comment -->",
+
+        # 3. Числа, плавающая точка, ведущие нули (проверка \p{N})
+        "0",
+        "1234567890",
+        "0001",
+        "42",
+        "3.1415926535",
+        "-100",
+        "1e-5",
+        "user_id_42",
+        "item_v2_final_99",
+
+        # 4. Английские сокращения и апострофы (ветка (?i:'s|'t|...))
+        "I'm",
+        "don't",
+        "they'll",
+        "it's",
+        "we've",
+        "you'd",
+        "she're",
+        "DON'T DO IT",
+        "IT'S A TEST",
+        "rock'n'roll",
+
+        # 5. Идентификаторы, змеиный регистр и CamelCase
+        "get_current_weather",
+        "Small_LLM_Model",
+        "__init__",
+        "token_to_id",
+        "API_KEY_SECRET",
+
+        # 6. Кириллица и 2-байтовые последовательности UTF-8
+        "Привет, мир!",
+        "Тестирование токенизатора",
+        "Функция вызова",
+        "ёжик в тумане",
+        "123 привет 456 мир",
+
+        # 7. Расширенная латиница, акценты и диакритика
+        "Bonjour le monde! Ça va?",
+        "Schöne Grüße aus München",
+        "¡Hola, señor!",
+        "naïve café résumé",
+
+        # 8. Эмодзи и 4-байтовые символы Unicode
+        "🤖",
+        "🚀",
+        "🔥",
+        "🤖🚀🔥",
+        "Hello 👋 world 🌍!",
+        "Python 🐍 is awesome ✨",
+
+        # 9. Длинные слова, повторы и Out-of-Vocabulary (OOV)
+        "supercalifragilisticexpialidocious",
+        "antidisestablishmentarianism",
+        "aaaaaaaaaaaaaaaaaaaa",
+        "asdfghjklqwertyuiopzxcvbnm",
+        "!@#$%^&*()_+{}[]:;\"'<>,.?/|\\~`",
+    ]
     model = llm_sdk.Small_LLM_Model()
     path_to_vocab = model.get_path_to_vocab_file()
     merges_path = model.get_path_to_merges_file()
@@ -124,89 +206,6 @@ def main() -> None:
         if actual_decode != expected_decode[0]:
             print(actual_decode, expected_decode[0])
 
-
-TEST_CASES: list[str] = [
-    # 1. Граничные случаи пустых строк и пробелов
-    "",
-    " ",
-    "   ",
-    "Hello world",
-    " hello world ",
-    "hello   world",
-    "\t",
-    "\n",
-    "\r\n",
-    "\n\n\t\r\n",
-
-    # 2. JSON-синтаксис, экранирование и спецсимволы (Function Calling)
-    '{"name": "get_weather", "arguments": {"city": "Paris"}}',
-    '{"name": "calculate", "arguments": {"a": 42, "b": 3.14}}',
-    '{"parameters": {}}',
-    "[]",
-    '["item_1", "item_2", 123]',
-    '{"key": "value with \\"quotes\\" and \\nnewlines"}',
-    "::==>>",
-    "---===***",
-    "<!-- comment -->",
-
-    # 3. Числа, плавающая точка, ведущие нули (проверка \p{N})
-    "0",
-    "1234567890",
-    "0001",
-    "42",
-    "3.1415926535",
-    "-100",
-    "1e-5",
-    "user_id_42",
-    "item_v2_final_99",
-
-    # 4. Английские сокращения и апострофы (ветка (?i:'s|'t|...))
-    "I'm",
-    "don't",
-    "they'll",
-    "it's",
-    "we've",
-    "you'd",
-    "she're",
-    "DON'T DO IT",
-    "IT'S A TEST",
-    "rock'n'roll",
-
-    # 5. Идентификаторы, змеиный регистр и CamelCase
-    "get_current_weather",
-    "Small_LLM_Model",
-    "__init__",
-    "token_to_id",
-    "API_KEY_SECRET",
-
-    # 6. Кириллица и 2-байтовые последовательности UTF-8
-    "Привет, мир!",
-    "Тестирование токенизатора",
-    "Функция вызова",
-    "ёжик в тумане",
-    "123 привет 456 мир",
-
-    # 7. Расширенная латиница, акценты и диакритика
-    "Bonjour le monde! Ça va?",
-    "Schöne Grüße aus München",
-    "¡Hola, señor!",
-    "naïve café résumé",
-
-    # 8. Эмодзи и 4-байтовые символы Unicode
-    "🤖",
-    "🚀",
-    "🔥",
-    "🤖🚀🔥",
-    "Hello 👋 world 🌍!",
-    "Python 🐍 is awesome ✨",
-
-    # 9. Длинные слова, повторы и Out-of-Vocabulary (OOV)
-    "supercalifragilisticexpialidocious",
-    "antidisestablishmentarianism",
-    "aaaaaaaaaaaaaaaaaaaa",
-    "asdfghjklqwertyuiopzxcvbnm",
-    "!@#$%^&*()_+{}[]:;\"'<>,.?/|\\~`",
-]
 
 if __name__ == "__main__":
     main()

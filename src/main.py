@@ -3,12 +3,17 @@ from argparse import ArgumentParser, Namespace, ArgumentDefaultsHelpFormatter
 from pathlib import Path
 from typing import Sequence
 from .validation import validate_files, ValError
+from .trie import FunctionTrie
+from .tokeniser import CustomQwenTokeniser
 from sys import stderr
 import pydantic as pd
 
 
 def main() -> int:
-   # LLM_Model = llm_sdk.Small_LLM_Model()
+    model = llm_sdk.Small_LLM_Model()
+    path_to_vocab = model.get_path_to_vocab_file()
+    merges_path = model.get_path_to_merges_file()
+    tokeniser = CustomQwenTokeniser(path_to_vocab, merges_path)
 
     args = argument_pasrser()
     try:
@@ -17,8 +22,8 @@ def main() -> int:
     except ValError as e:
         print(e, file=stderr)
         return 1
-
-    
+    testtrie = FunctionTrie(functions)
+    testtrie.build(tokeniser)
 
     return 0
 
