@@ -1,6 +1,6 @@
 from .validation import Prompt, Functions
 from pathlib import Path
-from typing import Callable
+import json
 
 
 PROMPT_STR = """"
@@ -15,23 +15,32 @@ PROMPT_STR = """"
 class PromptGenerator():
     def __init__(self, functions: list[Functions]) -> None:
         self.functions = functions
-        self.prompt_dict: dict[str, str] = {
-            "function_name": ("<|im_start|>system\n"
-                              "You are a helpful assistant with "
-                              "access to the following functions:\n"
-                              "{functions}\nRespond with function name only.\n"
-                              "<|im_end|>\n<|im_start|>user\n"
-                              "{prompt}\n<|im_end|>")
-        }
-        self.promt_functions: dict[str, Callable] = {
-            "function_name_prompt": self.function_name_prompt
-        }
+        self.prompt_template: str = ("<|im_start|>system\n"
+                                     "You are a helpful assistant with "
+                                     "access to the following functions:\n"
+                                     "{functions}\n"
+                                     "To call a function, respond strictly with a "
+                                     "JSON object in this format:\n"
+                                     '{{"name": "<function_name>", "parameters": {{<arguments>}}}}'
+                                     "<|im_end|>\n<|im_start|>user\n"
+                                     "{prompt}\n<|im_end|>"
+                                     "<|im_start|>assistant\n"
+                                     "{{")
+        self.functions_description: str = self.get_descriptions()
 
-    def prompt_generator(self, prompt_type: str, prompt: str):
-        pass
+    def get_descriptions(self) -> str:
+        functions_list: list[str] = ["["]
+        for function in self.functions:
+            dump_function = function.model_dump(
+                exclude_none=True, exclude={"returns"})
+            readable_json = json.dumps(dump_function, indent=2)
+            functions_list.append(f"{readable_json}")
+        functions_list.append("]")
+        return ",\n".join(functions_list)
 
-    def function_name_prompt(self) -> str:
-        final_prompt =
+    def build_gen_promt(self, prompt: str) -> str:
+        return self.prompt_template.format(
+            functions=self.functions_description, prompt=prompt)
 
 
 if __name__ == "__main__":

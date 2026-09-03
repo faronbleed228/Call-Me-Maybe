@@ -5,15 +5,16 @@ from typing import Sequence
 from .validation import validate_files, ValError
 from .trie import FunctionTrie
 from .tokeniser import CustomQwenTokeniser
+from .prompt_generator import PromptGenerator
 from sys import stderr
 import pydantic as pd
 
 
 def main() -> int:
-    model = llm_sdk.Small_LLM_Model()
-    path_to_vocab = model.get_path_to_vocab_file()
-    merges_path = model.get_path_to_merges_file()
-    tokeniser = CustomQwenTokeniser(path_to_vocab, merges_path)
+    # model = llm_sdk.Small_LLM_Model()
+    # path_to_vocab = model.get_path_to_vocab_file()
+    # merges_path = model.get_path_to_merges_file()
+    # tokeniser = CustomQwenTokeniser(path_to_vocab, merges_path)
 
     args = argument_pasrser()
     try:
@@ -22,8 +23,10 @@ def main() -> int:
     except ValError as e:
         print(e, file=stderr)
         return 1
-    testtrie = FunctionTrie(functions)
-    testtrie.build(tokeniser)
+    # testtrie = FunctionTrie(functions)
+    # testtrie.build(tokeniser)
+    prompt_generator = PromptGenerator(functions)
+    print(prompt_generator.build_gen_promt(prompts[0].prompt))
 
     return 0
 
