@@ -8,6 +8,7 @@ import re
 from typing import ClassVar, Protocol, Sequence
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .tokeniser import CustomQwenTokeniser
 from .trie import FunctionTrie, TokenTrieNode
@@ -577,9 +578,9 @@ class FSM:
 
     @staticmethod
     def apply_logit_mask(
-        logits: np.ndarray,
+        logits: NDArray[np.float32],
         allowed_tokens: list[int],
-    ) -> np.ndarray:
+    ) -> NDArray[np.float32]:
         """Mask logits for every token forbidden by the FSM.
 
         Args:
@@ -598,7 +599,7 @@ class FSM:
         logits_mask[allowed_tokens] = logits[allowed_tokens]
         return logits_mask
 
-    def apply_completion_bias(self, logits: np.ndarray) -> None:
+    def apply_completion_bias(self, logits: NDArray[np.float32]) -> None:
         """Increase terminator logits after a value becomes complete.
 
         Args:
@@ -662,7 +663,8 @@ class FSM:
             RuntimeError: If the selected token is absent from the trie.
         """
         token_id = self.returned_tokens[-1]
-        if token_id == self.fsm_stack.quote_token_id:
+        if (token_id == self.fsm_stack.quote_token_id
+                and self.fsm_stack.cur_trie.func_name is not None):
             self.finish_function_name()
             return
 

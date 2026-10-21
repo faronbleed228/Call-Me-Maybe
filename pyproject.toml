@@ -1,7 +1,7 @@
 [project]
 name = "call-me-maybe"
 version = "0.1.0"
-description = "Add your description here"
+description = "Local function-call generation using trie and FSM constraints"
 readme = "README.md"
 authors = [
     { name = "faronbleed", email = "yaroslav.popovych17@gmail.com" }
@@ -12,9 +12,6 @@ dependencies = [
     "numpy>=2.2.6",
     "pydantic>=2.13.5",
 ]
-
-[project.scripts]
-call-me-maybe = "call_me_maybe:main"
 
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13.0"]
@@ -47,3 +44,6 @@ check_untyped_defs = true
 
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
