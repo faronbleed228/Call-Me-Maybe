@@ -1,11 +1,19 @@
 import llm_sdk
 import regex
 import json
-import torch
 
 
-class CustomQwenTokeniser():
+class CustomQwenTokeniser:
     def __init__(self, path_to_vocab: str, merges_path: str) -> None:
+        """Load the vocabulary and merge rules for a Qwen tokenizer.
+
+        Args:
+            path_to_vocab: Path to the tokenizer vocabulary JSON file.
+            merges_path: Path to the byte-pair encoding merge rules.
+
+        Raises:
+            ValueError: If tokenizer data cannot be read or parsed.
+        """
         self._pattern = "(?i:'s|'t|'re|'ve|'m|'ll|'d)"\
             "|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}"\
             "| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
@@ -21,6 +29,14 @@ class CustomQwenTokeniser():
                                int] = self.create_merges_dict()
 
     def encode(self, text: str) -> list[int]:
+        """Encode text into model token IDs.
+
+        Args:
+            text: Unicode text to tokenize.
+
+        Returns:
+            Token IDs produced by byte-pair encoding.
+        """
         if not text:
             return []
         pre_token = regex.findall(self._pattern, text)
@@ -36,7 +52,9 @@ class CustomQwenTokeniser():
                         if best_rank is None:
                             best_index = i
                             best_rank = self.merges_dict[word[i], word[i + 1]]
-                        elif best_rank > self.merges_dict[word[i], word[i + 1]]:
+                        elif best_rank > self.merges_dict[
+                            word[i], word[i + 1]
+                        ]:
                             best_index = i
                             best_rank = self.merges_dict[word[i], word[i + 1]]
                 if best_index is None:
@@ -53,22 +71,48 @@ class CustomQwenTokeniser():
         return id_list
 
     def decode(self, id_list: list[int]) -> str:
+        """Decode model token IDs into Unicode text.
+
+        Args:
+            id_list: Token IDs to decode.
+
+        Returns:
+            Decoded text, replacing malformed UTF-8 sequences.
+
+        Raises:
+            KeyError: If a token ID is absent from the vocabulary.
+        """
         unicode_list = [self.id_to_token[id] for id in id_list]
         text_encoded = "".join(unicode_list)
-        raw_bytes = (self.decode_dict[char] for char in text_encoded)
-        raw_bytes = bytes(raw_bytes)
+        byte_values = (self.decode_dict[char] for char in text_encoded)
+        raw_bytes = bytes(byte_values)
         result = raw_bytes.decode("utf-8", errors='replace')
         return (result)
 
     def json_to_dict(self) -> dict[str, int]:
+        """Read the tokenizer vocabulary from JSON.
+
+        Returns:
+            A mapping from encoded token strings to token IDs.
+
+        Raises:
+            ValueError: If the vocabulary cannot be read or parsed.
+        """
         try:
             with open(self.path_to_vocab) as vocab_file:
                 data: dict[str, int] = json.load(vocab_file)
-        except Exception as e:
-            print(e)
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError(
+                f"Cannot load tokenizer vocabulary: {error}"
+            ) from error
         return data
 
     def bytes_to_unicode(self) -> dict[int, str]:
+        """Build the reversible byte-to-Unicode mapping used by GPT BPE.
+
+        Returns:
+            A mapping containing one printable Unicode value per byte.
+        """
         bytes = list(list(range(ord("!"), ord("~") + 1)) +
                      list(range(ord("¡"), ord("¬") + 1)) +
                      list(range(ord("®"), ord("ÿ") + 1))
@@ -85,6 +129,14 @@ class CustomQwenTokeniser():
         return ret
 
     def create_merges_dict(self) -> dict[tuple[str, str], int]:
+        """Load byte-pair merge ranks from the tokenizer merge file.
+
+        Returns:
+            Token-pair merge ranks keyed by the two component strings.
+
+        Raises:
+            ValueError: If the merge file cannot be read or parsed.
+        """
         merge_dict: dict[tuple[str, str], int] = {}
         try:
             with open(self.merges_path) as fd:
@@ -92,12 +144,15 @@ class CustomQwenTokeniser():
                 for index, characters in enumerate(fd):
                     char_1, char_2 = characters.split()
                     merge_dict[char_1, char_2] = index
-        except Exception as e:
-            print(e)
+        except (OSError, ValueError) as error:
+            raise ValueError(
+                f"Cannot load tokenizer merges: {error}"
+            ) from error
         return merge_dict
 
 
 def main() -> None:
+    """Compare the custom tokenizer with the SDK on diagnostic inputs."""
     TEST_CASES: list[str] = [
         # 1. Граничные случаи пустых строк и пробелов
         "",
@@ -180,7 +235,8 @@ def main() -> None:
         "asdfghjklqwertyuiopzxcvbnm",
         "!@#$%^&*()_+{}[]:;\"'<>,.?/|\\~`",
     ]
-    model = llm_sdk.Small_LLM_Model()
+    model_class = getattr(llm_sdk, "Small_LLM_Model")
+    model = model_class()
     path_to_vocab = model.get_path_to_vocab_file()
     merges_path = model.get_path_to_merges_file()
     tokeniser = CustomQwenTokeniser(path_to_vocab, merges_path)

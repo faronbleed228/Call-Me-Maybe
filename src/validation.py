@@ -7,6 +7,11 @@ from os import access, W_OK
 
 class ValError(Exception):
     def __init__(self, msg: str):
+        """Initialize a validation error.
+
+        Args:
+            msg: Human-readable description of the validation failure.
+        """
         super().__init__(msg)
 
 
@@ -18,11 +23,11 @@ class Functions(BaseModel):
 
 
 class ParameterType(BaseModel):
-    type: Literal["number", "string"]
+    type: Literal["number", "string", "boolean", "integer"]
 
 
 class ReturnType(BaseModel):
-    type: Literal["number", "string", "boolean"]
+    type: Literal["number", "string", "boolean", "integer"]
 
 
 class Prompt(BaseModel):
@@ -31,6 +36,19 @@ class Prompt(BaseModel):
 
 def validate_files(functions_file: Path, prompt_file: Path,
                    output_file: Path) -> tuple[list[Functions], list[Prompt]]:
+    """Read and validate the function definitions and prompt files.
+
+    Args:
+        functions_file: Path to the JSON function definitions.
+        prompt_file: Path to the JSON prompt collection.
+        output_file: Destination path used to validate output writability.
+
+    Returns:
+        The validated function definitions and prompts.
+
+    Raises:
+        ValError: If an input is invalid or a required path is inaccessible.
+    """
     functions_adapter = TypeAdapter(list[Functions])
     prompt_adapter = TypeAdapter(list[Prompt])
 
@@ -46,7 +64,7 @@ def validate_files(functions_file: Path, prompt_file: Path,
         output_dir.mkdir(parents=True, exist_ok=True)
     except OSError as e:
         target = f"'{e.filename}'" if e.filename else ""
-        raise ValError(f"Error: {e.strerror} {target}")
+        raise ValError(f"{e.strerror} {target}")
 
     except ValidationError as e:
         first_error = e.errors()[0]
@@ -56,7 +74,7 @@ def validate_files(functions_file: Path, prompt_file: Path,
             f"Pydantic Validation error: path: {path}, message: {msg}")
 
     except ValueError as e:
-        raise ValError(f"Error: {e}")
+        raise ValError(str(e))
 
     if output_file.exists():
         if access(output_file, W_OK) is False:

@@ -28,7 +28,6 @@ members = [
 [tool.uv.sources]
 llm-sdk = { workspace = true, editable = true }
 
-
 [dependency-groups]
 dev = [
     "flake8>=7.3.0",
@@ -37,7 +36,8 @@ dev = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
+exclude = ["llm_sdk/", "moulinette/"]
 warn_return_any = true
 warn_unused_ignores = true
 ignore_missing_imports = true
