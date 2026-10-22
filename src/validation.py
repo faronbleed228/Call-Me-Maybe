@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel, ValidationError, TypeAdapter
+from pydantic import BaseModel, ValidationError, TypeAdapter, field_validator
 from pathlib import Path
 from typing import Literal, Union
 from os import access, W_OK
@@ -21,6 +21,13 @@ class Functions(BaseModel):
     parameters: dict[str, ParameterType]
     returns: Union[ReturnType, list[ReturnType]]
 
+    @field_validator("name")
+    @classmethod
+    def nonblank_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Function name cannot be blank")
+        return value
+
 
 class ParameterType(BaseModel):
     type: Literal["number", "string", "boolean", "integer"]
@@ -32,6 +39,13 @@ class ReturnType(BaseModel):
 
 class Prompt(BaseModel):
     prompt: str
+
+    @field_validator("prompt")
+    @classmethod
+    def nonblank_prompt(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Prompt cannot be blank")
+        return value
 
 
 def validate_files(functions_file: Path, prompt_file: Path,
@@ -84,6 +98,8 @@ def validate_files(functions_file: Path, prompt_file: Path,
 
     if not functions:
         raise ValError("Functions definition file cannot be empty")
+    if len({function.name for function in functions}) != len(functions):
+        raise ValError("Function names must be unique")
     if not prompts:
         raise ValError("Prompt tests file cannot be empty")
 

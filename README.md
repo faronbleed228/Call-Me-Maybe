@@ -226,18 +226,26 @@ chosen function name. Numeric validation scans only the preclassified numeric
 subset of the vocabulary, and the cached type-specific token sets avoid a full
 vocabulary scan for every prompt.
 
-The latest end-to-end run against the 11 private cases included with the local
-moulinette scored **11/11 (100%)**. The suite covers floating-point and integer
-arguments, long decimals, SQL strings, POSIX and Windows paths, punctuation,
-backslashes, and embedded quotes. Runtime varies with hardware and cache state;
-long strings take more time because they require more inference steps.
+The earlier developer-reported private moulinette score was 11/11. That suite
+is not included here and was not rerun for this maintenance revision.
+It does not establish general semantic accuracy.
 
-Structural reliability does not depend on model accuracy: function names,
-parameter order and types, JSON delimiters, and output keys are constrained by
-code. Semantic accuracy still depends on the model choosing the intended
-function and extracting the correct values. Generation limits convert a model
-that refuses to terminate into a controlled error rather than an infinite
-loop.
+The public offline suite is reproducible without weights, the SDK or API calls:
+
+```sh
+python -m pip install numpy pydantic regex
+python -m unittest discover -s tests -v
+```
+
+With the full development environment, use `make test` and `make lint-strict`.
+The tests use scripted logits and a tiny tokenizer to check JSON numeric
+prefixes, integer/float/Boolean decoding, escaped names/keys/values, trie prefix
+names, empty parameters, limits, masking and invalid input schemas.
+They do not test real-model function selection or accuracy.
+
+The supported launch command is `uv run python -m src`; this workspace is not
+installed as a console-script package. The stale console entry point was removed.
+No real-model inference or model download was performed for this revision.
 
 ## Challenges faced
 
@@ -271,21 +279,11 @@ without hardcoding test values.
 
 ## Testing strategy
 
-Testing is performed at several levels:
-
-- input validation checks malformed JSON, empty arrays, invalid schemas,
-  missing files, directory output paths, and unwritable destinations;
-- tokenizer diagnostics compare custom encoding and decoding with the SDK over
-  whitespace, JSON syntax, Unicode, emoji, numbers, and punctuation;
-- FSM cases cover shared function-name prefixes, zero-argument functions,
-  mixed parameter types, Boolean values, numeric grammar, regex validity,
-  escaping, and generation limits;
-- end-to-end runs parse the generated output and execute selected functions
-  with the produced parameters;
-- the private moulinette suite verifies 11 representative calls and currently
-  reports 11/11;
-- `flake8`, strict `mypy`, `compileall`, and `git diff --check` are used after
-  source changes.
+The public offline suite checks validation, grammar, trie prefix names, escaping,
+masking, empty parameters and token limits with scripted logits. Historical SDK
+tokenizer diagnostics and private end-to-end scores are developer reports and
+have not been reproduced for this maintenance revision. Passing offline tests
+does not establish real-model semantic accuracy.
 
 Run the local static checks with:
 
@@ -346,3 +344,5 @@ AI was used as a development assistant for code review, identifying edge cases
 in the FSM, diagnosing numeric non-termination and JSON escaping failures,
 suggesting test cases, writing Google-style docstrings, and improving this
 README.
+
+Maintenance fixes and the public offline suite were prepared with OpenAI Codex on 2026-10-21.

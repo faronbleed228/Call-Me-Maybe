@@ -1,4 +1,4 @@
-.PHONY: install run debug clean lint lint-strict
+.PHONY: install run debug clean lint lint-strict test
 
 export UV_CACHE_DIR := .uv-cache
 
@@ -24,3 +24,6 @@ lint:
 lint-strict:
 	uv run flake8 .
 	uv run mypy . --strict
+
+test:
+	uv run python -m unittest discover -s tests -v

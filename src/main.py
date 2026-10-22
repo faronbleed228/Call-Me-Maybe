@@ -1,4 +1,3 @@
-import llm_sdk
 from argparse import ArgumentParser, Namespace, ArgumentDefaultsHelpFormatter
 import json
 import logging
@@ -40,6 +39,8 @@ def main() -> int:
             args.input,
             args.output,
         )
+        import llm_sdk
+
         print("Loading model...", flush=True)
         model_class = getattr(llm_sdk, "Small_LLM_Model")
         model = model_class()

@@ -1,4 +1,3 @@
-import llm_sdk
 import regex
 import json
 
@@ -235,6 +234,8 @@ def main() -> None:
         "asdfghjklqwertyuiopzxcvbnm",
         "!@#$%^&*()_+{}[]:;\"'<>,.?/|\\~`",
     ]
+    import llm_sdk
+
     model_class = getattr(llm_sdk, "Small_LLM_Model")
     model = model_class()
     path_to_vocab = model.get_path_to_vocab_file()
